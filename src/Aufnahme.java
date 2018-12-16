@@ -6,12 +6,14 @@ import org.opencv.imgproc.Imgproc;
 import org.opencv.video.BackgroundSubtractorMOG2;
 import org.opencv.video.Video;
 import org.opencv.videoio.VideoCapture;
+import org.w3c.dom.css.RGBColor;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferByte;
+import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Random;
 
@@ -65,7 +67,7 @@ public class Aufnahme extends JFrame {
             //*****Hier werden die Methoden ausgeführt.*****
 
             imgPanel1.setImage(Mat2BufferedImage(pruefen(frame)));
-            imgPanel2.setImage(Mat2BufferedImage(karteErkennen(frame)));
+            imgPanel2.setImage(Mat2BufferedImage(karteEingegrenztFreistellen(frame)));
             pack();
             /*if(frame.height()<720 && frame.height()>300 && frame.width()<480 && frame.width()>200) {
                 break;
@@ -142,7 +144,11 @@ public class Aufnahme extends JFrame {
         return imageAusgabe;
     }
 
-    public Mat karteErkennen(Mat img){
+    public Mat karteErkennen(Mat img)
+
+
+
+    {
 
         Mat grayImg = new Mat();
         Mat blurImg = new Mat();
@@ -283,6 +289,29 @@ public class Aufnahme extends JFrame {
 
     }
 
+    public Mat pruefen2(Mat img){
+        Rect rect = new Rect(100,100,300,450);
+
+        //Mat croppedImg = new Mat(img, rect);
+        Mat grayImg = new Mat();
+        Mat blurImg = new Mat();
+        Mat thresholdImg = new Mat();
+        Mat ausgabe = new Mat();
+        Mat cannyEdges = new Mat();
+        Size size = new Size(3, 3);
+
+        Imgproc.cvtColor(img, grayImg, Imgproc.COLOR_BGR2GRAY);
+        Imgproc.blur(grayImg, blurImg, size);
+        //Imgproc.GaussianBlur(blurImg, thresholdImg, size, 7,7);
+        //Imgproc.bilateralFilter(grayImg, blurImg, 15,20,20);
+        //Imgproc.threshold(blurImg, thresholdImg, 200, 255,Imgproc.THRESH_OTSU);
+        Imgproc.threshold(blurImg, thresholdImg, 150, 220,Imgproc.THRESH_BINARY);
+        //Imgproc.adaptiveThreshold(blurImg,thresholdImg,255, Imgproc.ADAPTIVE_THRESH_GAUSSIAN_C, Imgproc.THRESH_BINARY,11,0);
+        Imgproc.Canny(thresholdImg, cannyEdges, 20, 60, 3, false);
+
+        return cannyEdges;
+    }
+
     public Mat karteFreistellen(Mat img) {
 
         Mat grayImg = new Mat();
@@ -337,15 +366,110 @@ public class Aufnahme extends JFrame {
         Imgproc.threshold(blurImg, thresholdImg, 100, 255, Imgproc.THRESH_BINARY);
         Imgproc.Canny(thresholdImg, cannyEdges, 50, 200, 3, false);
 
-        Imgproc.HoughLinesP(cannyEdges, lines, 1, Math.PI/180, 50, 50, 10);
-        System.out.println(lines.size());
+        Imgproc.HoughLinesP(cannyEdges, lines, 1, Math.PI/180, 50, 300, 25);
+
+        MatOfPoint points = new MatOfPoint();
 
         for (int x = 0; x < lines.rows(); x++) {
             double[] l = lines.get(x, 0);
             Imgproc.line(img, new Point(l[0], l[1]), new Point(l[2], l[3]), new Scalar(0, 0, 255), 3, Imgproc.LINE_AA, 0);
         }
 
-        return img;
+        //System.out.println(points.size());
+
+        Mat ausgabe = img;
+
+        /*Rect rect = new Rect(0,0,img.width(),img.height());
+
+        if(!points.empty()) {
+            rect = Imgproc.boundingRect(points);
+        }
+
+        ausgabe = new Mat(img, rect);*/
+
+        return ausgabe;
+    }
+
+    public Mat karteEingegrenztFreistellen (Mat img){
+        //Rect rect = new Rect(100,100,300,450);
+
+        //Mat croppedImg = new Mat(img, rect);
+        Mat grayImg = new Mat();
+        Mat blurImg = new Mat();
+        Mat thresholdImg = new Mat();
+        Mat ausgabe = new Mat();
+        Mat cannyEdges = new Mat();
+        Mat hsvImg = new Mat();
+        Mat rotiert = img;
+        Mat cropped = img;
+
+        Size size = new Size(3,3);
+
+        Imgproc.cvtColor(img, grayImg, Imgproc.COLOR_BGR2GRAY);
+        Imgproc.blur(grayImg, blurImg, size);
+        //Imgproc.GaussianBlur(blurImg, thresholdImg, size, 7,7);
+        //Imgproc.bilateralFilter(grayImg, blurImg, 15,20,20);
+        Imgproc.threshold(blurImg, thresholdImg, 150, 220,Imgproc.THRESH_BINARY);
+        //Imgproc.adaptiveThreshold(blurImg,thresholdImg,255, Imgproc.ADAPTIVE_THRESH_GAUSSIAN_C, Imgproc.THRESH_BINARY,11,0);
+        Imgproc.Canny(thresholdImg, cannyEdges, 20, 60, 3, false);
+
+
+        ArrayList<MatOfPoint> contours= new ArrayList<>();
+
+        Imgproc.findContours(cannyEdges,contours, new Mat(), Imgproc.RETR_LIST,Imgproc.CHAIN_APPROX_SIMPLE);
+
+        if(contours.size()>1) {
+
+            ArrayList<RotatedRect> rects = new ArrayList<>();
+
+            Imgproc.drawContours(img, contours, -1, new Scalar(0, 0, 255));
+
+            //funktioniert!!!!!!!!
+
+            for(int i = 0; i<contours.size(); i++) {
+                MatOfPoint points = contours.get(i);
+                MatOfPoint2f contours2D = new MatOfPoint2f(points.toArray());
+                RotatedRect rotatedRect = Imgproc.minAreaRect(contours2D);
+                rects.add(rotatedRect);
+                //System.out.println("test1");
+            }
+
+            RotatedRect rect = new RotatedRect();
+
+            for(int i = 0; i<rects.size(); i++ ){
+                RotatedRect rect1 = rects.get(i);
+                if(rect.size.width<rect1.size.width && rect.size.height<rect1.size.height){
+                    rect = rect1;
+                    //System.out.println("test2");
+                }
+            }
+
+            //double height1 = rect.size.width*1.5;
+            double heightmin = rect.size.width*1.2;
+            double heightmax = rect.size.width*1.8;
+
+
+            if(rect.size.width>200 && rect.size.width<400 && rect.size.height>heightmin && rect.size.height<heightmax){
+
+                float angle = (float) rect.angle;
+
+                Size rect_size = rect.size;
+
+                if (rect.angle < -45.) {
+                    angle += 90.0;
+                    rect.size.height = rect_size.width;
+                    rect.size.width = rect_size.height;
+                }
+
+                Mat m = Imgproc.getRotationMatrix2D(rect.center, angle, 1.0);
+                Imgproc.warpAffine(img, rotiert, m, img.size(), INTER_CUBIC);
+                Imgproc.getRectSubPix(rotiert, rect.size, rect.center, cropped);
+                System.out.println(cropped.width() + " " + cropped.height());
+            }
+
+        }
+
+        return cropped;
     }
 
     public Mat backgroundsubtraction (Mat img){
