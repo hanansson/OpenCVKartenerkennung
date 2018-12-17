@@ -1,30 +1,27 @@
-import org.opencv.bgsegm.BackgroundSubtractorMOG;
 import org.opencv.core.*;
 import org.opencv.core.Point;
-import org.opencv.imgcodecs.Imgcodecs;
 import org.opencv.imgproc.Imgproc;
-import org.opencv.video.BackgroundSubtractorMOG2;
-import org.opencv.video.Video;
+import org.opencv.objdetect.CascadeClassifier;
 import org.opencv.videoio.VideoCapture;
-import org.w3c.dom.css.RGBColor;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferByte;
-import java.lang.reflect.Array;
 import java.util.ArrayList;
-import java.util.Random;
 
 import static org.opencv.core.Core.countNonZero;
+import static org.opencv.imgcodecs.Imgcodecs.IMREAD_COLOR;
+import static org.opencv.imgcodecs.Imgcodecs.imread;
 import static org.opencv.imgproc.Imgproc.*;
 
 public class Aufnahme extends JFrame {
 
     private BufferedImagePanel imgPanel1;
     private BufferedImagePanel imgPanel2;
-    private BufferedImagePanel imgPanel3;
+    private FarbenErkennen farbenErkennen = new FarbenErkennen();
+
     Mat frame;
 
     public Aufnahme() {
@@ -42,8 +39,7 @@ public class Aufnahme extends JFrame {
         contentPane.add(imgPanel1);
         imgPanel2 = new BufferedImagePanel();
         contentPane.add(imgPanel2);
-        //imgPanel3 = new BufferedImagePanel();
-        //contentPane.add(imgPanel3);
+
         ActionEvent event = null;
         pack();
 
@@ -55,8 +51,39 @@ public class Aufnahme extends JFrame {
 
     public void videoProcess() {
 
+        Mat a;
+        Mat b;
+
+        String filenameHerzCascade = "/Users/nielshansen/IdeaProjects/OpenCVKamera/cascade/herz_cascade.xml";
+        String filenameKaroCascade = "/Users/nielshansen/IdeaProjects/OpenCVKamera/cascade/karo_cascade.xml";
+        String filenamePikCascade = "/Users/nielshansen/IdeaProjects/OpenCVKamera/cascade/pik_cascade.xml";
+        String filenameKreuzCascade = "/Users/nielshansen/IdeaProjects/OpenCVKamera/cascade/kreuz_cascade.xml";
+
+        CascadeClassifier herzCascade = new CascadeClassifier();
+        CascadeClassifier karoCascade = new CascadeClassifier();
+        CascadeClassifier pikCascade = new CascadeClassifier();
+        CascadeClassifier kreuzCascade = new CascadeClassifier();
+
+        if (!herzCascade.load(filenameHerzCascade)){
+            System.err.println("--Error loading herz cascade: " + filenameHerzCascade);
+            System.exit(0);
+        }
+        if (!karoCascade.load(filenameKaroCascade)){
+            System.err.println("--Error loading karo cascade: " + filenameKaroCascade);
+            System.exit(0);
+        }
+        if (!pikCascade.load(filenamePikCascade)){
+            System.err.println("--Error loading pik cascade: " + filenamePikCascade);
+            System.exit(0);
+        }
+        if (!kreuzCascade.load(filenameKreuzCascade)){
+            System.err.println("--Error loading kreuz cascade: " + filenameKreuzCascade);
+            System.exit(0);
+        }
+
         VideoCapture capture = new VideoCapture(0);
         frame = new Mat();
+
 
         if (!capture.isOpened())
             throw new CvException("The Video File or the Camera could not be opened!");
@@ -66,19 +93,32 @@ public class Aufnahme extends JFrame {
 
             //*****Hier werden die Methoden ausgeführt.*****
 
-            imgPanel1.setImage(Mat2BufferedImage(pruefen(frame)));
-            imgPanel2.setImage(Mat2BufferedImage(karteEingegrenztFreistellen(frame)));
-            pack();
-            /*if(frame.height()<720 && frame.height()>300 && frame.width()<480 && frame.width()>200) {
-                break;
+            //imgPanel1.setImage(Mat2BufferedImage(pruefen(frame)));
+            //imgPanel2.setImage(Mat2BufferedImage(karteEingegrenztFreistellen(frame)));
+
+            /*String imageName = "/Users/nielshansen/Desktop/karo.png";
+            b = imread(imageName, IMREAD_COLOR);*/
+
+            a = pruefen(frame);
+            b = karteEingegrenztFreistellen(frame);
+
+            imgPanel1.setImage(Mat2BufferedImage(a));
+            imgPanel2.setImage(Mat2BufferedImage(b));
+
+            farbenErkennen.formDetect(b, herzCascade, karoCascade, pikCascade, kreuzCascade);
+
+            //*****Um Aufnahme zu beenden und Detection auf die erkannte Karte anzuwenden*****:
+            /*if(a.height()!=b.height()){
+                farbenErkennen.formDetect(b, herzCascade, karoCascade, pikCascade, kreuzCascade);
             }*/
+
+            pack();
+
             if (!capture.read(frame)) {
                 break;
             }
         }
         capture.release();
-
-
     }
 
 
@@ -411,18 +451,18 @@ public class Aufnahme extends JFrame {
         //Imgproc.bilateralFilter(grayImg, blurImg, 15,20,20);
         Imgproc.threshold(blurImg, thresholdImg, 150, 220,Imgproc.THRESH_BINARY);
         //Imgproc.adaptiveThreshold(blurImg,thresholdImg,255, Imgproc.ADAPTIVE_THRESH_GAUSSIAN_C, Imgproc.THRESH_BINARY,11,0);
-        Imgproc.Canny(thresholdImg, cannyEdges, 20, 60, 3, false);
+        Imgproc.Canny(thresholdImg, cannyEdges, 1, 255, 3, false);
 
 
         ArrayList<MatOfPoint> contours= new ArrayList<>();
 
-        Imgproc.findContours(cannyEdges,contours, new Mat(), Imgproc.RETR_LIST,Imgproc.CHAIN_APPROX_SIMPLE);
+        Imgproc.findContours(cannyEdges,contours, new Mat(), Imgproc.RETR_TREE,Imgproc.CHAIN_APPROX_SIMPLE);
 
         if(contours.size()>1) {
 
             ArrayList<RotatedRect> rects = new ArrayList<>();
 
-            Imgproc.drawContours(img, contours, -1, new Scalar(0, 0, 255));
+            //Imgproc.drawContours(img, contours, -1, new Scalar(0, 0, 255));
 
             //funktioniert!!!!!!!!
 
@@ -445,11 +485,14 @@ public class Aufnahme extends JFrame {
             }
 
             //double height1 = rect.size.width*1.5;
-            double heightmin = rect.size.width*1.2;
-            double heightmax = rect.size.width*1.8;
+
+            //Vielleicht noch andere Größenverhältnisse. Vieleicht ist das auch Unsinn!
+
+            double heightmin = rect.size.width*1.3;
+            double heightmax = rect.size.width*1.7;
 
 
-            if(rect.size.width>200 && rect.size.width<400 && rect.size.height>heightmin && rect.size.height<heightmax){
+            if(rect.size.width>100 && rect.size.width<400 && rect.size.height>heightmin && rect.size.height<heightmax){
 
                 float angle = (float) rect.angle;
 
@@ -461,10 +504,12 @@ public class Aufnahme extends JFrame {
                     rect.size.width = rect_size.height;
                 }
 
+                //vielleicht irgendwie noch trimmen!
+
                 Mat m = Imgproc.getRotationMatrix2D(rect.center, angle, 1.0);
                 Imgproc.warpAffine(img, rotiert, m, img.size(), INTER_CUBIC);
                 Imgproc.getRectSubPix(rotiert, rect.size, rect.center, cropped);
-                System.out.println(cropped.width() + " " + cropped.height());
+                //System.out.println(cropped.width() + " " + cropped.height());
             }
 
         }
