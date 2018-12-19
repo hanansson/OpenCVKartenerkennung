@@ -10,8 +10,10 @@ import java.awt.event.ActionEvent;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferByte;
 import java.util.ArrayList;
+import java.util.List;
 
 import static org.opencv.core.Core.countNonZero;
+import static org.opencv.core.CvType.CV_8UC1;
 import static org.opencv.imgcodecs.Imgcodecs.IMREAD_COLOR;
 import static org.opencv.imgcodecs.Imgcodecs.imread;
 import static org.opencv.imgproc.Imgproc.*;
@@ -20,9 +22,17 @@ public class Aufnahme extends JFrame {
 
     private BufferedImagePanel imgPanel1;
     private BufferedImagePanel imgPanel2;
-    private FarbenErkennen farbenErkennen = new FarbenErkennen();
+    public FarbenErkennen farbenErkennen = new FarbenErkennen();
 
     Mat frame;
+    int erkannt;
+    int a11 = 0;
+    int a12 = 0;
+    int a13 = 0;
+    int a14 = 0;
+    //ArrayList<ArrayList<List<Rect>>> alleErkanntenKartenfarbenAllerImages;
+    ArrayList<List<Rect>> alleErkanntenKartenfarben;
+    ArrayList<Mat> kartenImages = new ArrayList<>();
 
     public Aufnahme() {
         creatLayout();
@@ -37,8 +47,8 @@ public class Aufnahme extends JFrame {
 
         imgPanel1 = new BufferedImagePanel();
         contentPane.add(imgPanel1);
-        imgPanel2 = new BufferedImagePanel();
-        contentPane.add(imgPanel2);
+        /*imgPanel2 = new BufferedImagePanel();
+        contentPane.add(imgPanel2);*/
 
         ActionEvent event = null;
         pack();
@@ -84,7 +94,6 @@ public class Aufnahme extends JFrame {
         VideoCapture capture = new VideoCapture(0);
         frame = new Mat();
 
-
         if (!capture.isOpened())
             throw new CvException("The Video File or the Camera could not be opened!");
         capture.read(frame);
@@ -93,24 +102,23 @@ public class Aufnahme extends JFrame {
 
             //*****Hier werden die Methoden ausgeführt.*****
 
-            //imgPanel1.setImage(Mat2BufferedImage(pruefen(frame)));
-            //imgPanel2.setImage(Mat2BufferedImage(karteEingegrenztFreistellen(frame)));
+            //a = pruefen(frame);
+            b = rahmenBegrenzen(frame);
 
-            /*String imageName = "/Users/nielshansen/Desktop/karo.png";
-            b = imread(imageName, IMREAD_COLOR);*/
+            imgPanel1.setImage(Mat2BufferedImage(rahmenBegrenzen(frame)));
+            //imgPanel2.setImage(Mat2BufferedImage(rahmenBegrenzen(frame)));
 
-            a = pruefen(frame);
-            b = karteEingegrenztFreistellen(frame);
+            erkannt = farbenErkennen.formDetect(b, herzCascade, karoCascade, pikCascade, kreuzCascade, erkannt);
 
-            imgPanel1.setImage(Mat2BufferedImage(a));
-            imgPanel2.setImage(Mat2BufferedImage(b));
-
-            farbenErkennen.formDetect(b, herzCascade, karoCascade, pikCascade, kreuzCascade);
-
-            //*****Um Aufnahme zu beenden und Detection auf die erkannte Karte anzuwenden*****:
-            /*if(a.height()!=b.height()){
-                farbenErkennen.formDetect(b, herzCascade, karoCascade, pikCascade, kreuzCascade);
-            }*/
+            if(erkannt>50){
+                System.out.println("test");
+                //Hier noch 10 durchläufe
+                for(a11 = 0; a11<10; a11 ++){
+                    Mat aufnahmeImg = rahmenBegrenzen(frame);
+                    kartenImages.add(aufnahmeImg);
+                }
+                break;
+            }
 
             pack();
 
@@ -119,6 +127,26 @@ public class Aufnahme extends JFrame {
             }
         }
         capture.release();
+        System.out.println(kartenImages.size());
+        for(a11 = 0; a11<kartenImages.size(); a11++) {
+            alleErkanntenKartenfarben = farbenErkennen.formDetect2(kartenImages.get(a11), herzCascade, karoCascade, pikCascade, kreuzCascade);
+            for(a12 = 0; a12<alleErkanntenKartenfarben.size(); a12 ++){
+                List<Rect>ObjektederKartenFarbe = alleErkanntenKartenfarben.get(a12);
+                //System.out.println(ObjektederKartenFarbe.size());
+                    for(a13 = 0; a13<ObjektederKartenFarbe.size(); a13++){
+                        System.out.println("1");
+                    }
+                    System.out.println("*****");
+                }
+                System.out.println("!!!!!!!");
+            }//*******
+            //alleErkanntenKartenfarbenAllerImages.add(alleErkanntenKartenfarben);
+        //System.out.println(alleErkanntenKartenfarbenAllerImages.size());
+        /*for(a11 = 0; a11<4; a11 ++){
+            for(a12 = 0; a12<alleErkanntenKartenfarben.get(a11).size(); a12 ++){
+            }
+        }*/
+
     }
 
 
@@ -135,260 +163,36 @@ public class Aufnahme extends JFrame {
                 throw new IllegalArgumentException("Unknown matrix type. Only one byte per pixel (one channel) or three bytes pre pixel (three channels) are allowed.");
         }
         BufferedImage bufferedImage = new BufferedImage(imgMat.cols(), imgMat.rows(), bufferedImageType);
-        //Was ist bufferedImage?
         final byte[] bufferedImageBuffer = ((DataBufferByte) bufferedImage.getRaster().getDataBuffer()).getData();
         imgMat.get(0, 0, bufferedImageBuffer);
         return bufferedImage;
 
     }
 
-    public Mat weichZeichnenFilter(Mat img) {
-
-        Mat grayMat = new Mat();
-        Mat hierarchy = new Mat();
-        Mat lines = new Mat();
-        Mat kernal = new Mat();
-        Mat dilateImg = new Mat();
-        Mat img2 = new Mat();
-        Mat imageThreshold = new Mat();
-        Mat cannyEdges = new Mat();
-        Mat imageBlur = new Mat();
-        Mat imageContrast = new Mat();
-        Size size = new Size(5, 5);
-
-        ArrayList<MatOfPoint> contourListe = new ArrayList<>();
-
-        Imgproc.cvtColor(img, grayMat, COLOR_BGR2GRAY);
-        Imgproc.equalizeHist(grayMat, img2);
-        Imgproc.GaussianBlur(img2, imageBlur, size, 5, 5);
-        //Imgproc.dilate(grayMat, dilateImg, kernal);
-        imageBlur.convertTo(imageContrast, -1, 2.5, 60);
-        Imgproc.adaptiveThreshold(imageBlur, imageThreshold, 255, Imgproc.ADAPTIVE_THRESH_MEAN_C, Imgproc.THRESH_BINARY, 45, 15); //hier liegt vielleicht das problem!
-        Imgproc.Canny(imageBlur, cannyEdges, 100, 100); //hier liegt vielleicht das problem!
-
-        Imgproc.findContours(cannyEdges, contourListe, hierarchy, Imgproc.RETR_LIST, Imgproc.CHAIN_APPROX_SIMPLE);
-
-        Mat contours = new Mat();
-        contours.create(cannyEdges.rows(), cannyEdges.cols(), CvType.CV_8UC3);
-        for (int i = 0; i < contourListe.size(); i++) {
-            Imgproc.drawContours(contours, contourListe, i, new Scalar((255), (255), (255)), -1, 1);
-        }
-
-        Rect auswahl = new Rect(160,120,320,450);
-        Mat imageAusgabe = new Mat (imageThreshold,auswahl);
-
-        int TotalNumberOfPixels = imageAusgabe.rows() * imageAusgabe.cols();
-        int zeroPixels = TotalNumberOfPixels - countNonZero(imageAusgabe);
-        System.out.println(zeroPixels);
-
-        return imageAusgabe;
-    }
-
-    public Mat karteErkennen(Mat img)
-
-
-
-    {
-
-        Mat grayImg = new Mat();
-        Mat blurImg = new Mat();
-        Mat thresholdImg = new Mat();
-        Size size = new Size(2, 2);
-        Mat cannyEdges = new Mat();
-
-        Imgproc.cvtColor(img, grayImg, Imgproc.COLOR_BGR2GRAY);
-        Imgproc.blur(grayImg, blurImg,size);
-        Imgproc.threshold(blurImg, thresholdImg, 170, 255,Imgproc.THRESH_BINARY); //thresh!
-        Imgproc.Canny(thresholdImg, cannyEdges, 50, 200, 3, false);
-
-        ArrayList<MatOfPoint> contours= new ArrayList<>();
-
-        Imgproc.findContours(cannyEdges,contours, new Mat(), Imgproc.RETR_TREE,Imgproc.CHAIN_APPROX_SIMPLE);
-
-        Mat imageAusgabe = img;
-
-        if(contours.size()>0) {
-            Imgproc.drawContours(img, contours, 1, new Scalar(0, 0, 255));
-
-            MatOfPoint points = contours.get(1);
-            MatOfPoint2f contours2D = new MatOfPoint2f(points.toArray());
-            RotatedRect rect2 = Imgproc.minAreaRect(contours2D);
-
-            Mat rotiert = new Mat();
-            Mat cropped = new Mat();
-
-            float angle = (float) rect2.angle;
-
-            Size rect_size = rect2.size;
-
-            if (rect2.angle < -45.) {
-                angle += 90.0;
-                rect2.size.height = rect_size.width;
-                rect2.size.width = rect_size.height;
-            }
-
-            Mat m = Imgproc.getRotationMatrix2D(rect2.center, angle, 1.0);
-            Imgproc.warpAffine(img, rotiert, m, img.size(), INTER_CUBIC);
-            Imgproc.getRectSubPix(rotiert, rect2.size, rect2.center, cropped);
-
-            if(cropped.width()>=21 && cropped.height()>=21) {
-                Rect auswahl = new Rect(10, 10, cropped.width() - 20, cropped.height() - 20);
-                imageAusgabe = new Mat(cropped, auswahl);
-            }
-        }
-
-        return imageAusgabe;
-    }
-
-    public Mat karteErkennen2(Mat img) {
-
-        //das geht theoretisch
-
-        Mat grayImg = new Mat();
-        Mat blurImg = new Mat();
-        Mat histImg = new Mat();
-        Mat ImgContrast = new Mat();
-        Mat thresholdImg = new Mat();
-        Mat cannyEdges = new Mat();
-        Size size = new Size(7, 7);
-
-        Imgproc.cvtColor(img, grayImg, Imgproc.COLOR_BGR2GRAY);
-        //Imgproc.blur(grayImg, blurImg, size);
-        //Imgproc.equalizeHist(grayImg,histImg); //test
-        Imgproc.GaussianBlur(grayImg, blurImg, size, 10, 10);
-        blurImg.convertTo(ImgContrast, -1, 3.0, 80);
-        Imgproc.threshold(blurImg, thresholdImg, 225, 255, Imgproc.THRESH_BINARY);//thresh!
-        //Imgproc.adaptiveThreshold(blurImg, thresholdImg, 255, Imgproc.ADAPTIVE_THRESH_MEAN_C, Imgproc.THRESH_BINARY, 45, 15);
-        //Imgproc.Canny(thresholdImg, cannyEdges, 100, 100);
-        Imgproc.Canny(thresholdImg, cannyEdges, 50, 200, 3, false);
-
-        ArrayList<MatOfPoint> contours= new ArrayList<>();
-
-        Imgproc.findContours(cannyEdges,contours, new Mat(), Imgproc.RETR_TREE,Imgproc.CHAIN_APPROX_SIMPLE);
-
-        System.out.println(contours.size());
-
-        if(contours.size()>0) {
-
-            //Imgproc.drawContours(img, contours, contours.size()-1, new Scalar(0, 0, 255));
-            //Imgproc.drawContours(img, contours, 1, new Scalar(0, 0, 255));
-
-            System.out.println(contours.size());
-            MatOfPoint points = contours.get(0);
-            //MatOfPoint points = contours.get(0);
-            MatOfPoint2f contours2D = new MatOfPoint2f(points.toArray());
-            RotatedRect rect2 = Imgproc.minAreaRect(contours2D);
-
-            Mat rotiert = new Mat();
-            Mat cropped = new Mat();
-
-            float angle = (float) rect2.angle;
-
-            Size rect_size = rect2.size;
-
-            if (rect2.angle < -45.) {
-                angle += 90.0;
-                rect2.size.height = rect_size.width;
-                rect2.size.width = rect_size.height;
-            }
-
-            Mat m = Imgproc.getRotationMatrix2D(rect2.center, angle, 1.0);
-            Imgproc.warpAffine(img, rotiert, m, img.size(), INTER_CUBIC);
-            Imgproc.getRectSubPix(rotiert, rect2.size, rect2.center, cropped);
-
-            if(cropped.width()>=21 && cropped.height()>=21) {
-                Rect auswahl = new Rect(10, 10, cropped.width() - 20, cropped.height() - 20);
-                Mat ausgabe = new Mat(cropped, auswahl);
-                frame = ausgabe;
-            }
-        }
-
-        return frame;
-    }
-
     public Mat pruefen(Mat img) {
 
-        Mat grayImg = new Mat();
-        Mat blurImg = new Mat();
-        Mat outputImg = img;
-        Mat thresholdImg = new Mat();
-        Mat cannyEdges = new Mat();
-        Size size = new Size(5, 5);
+            Mat grayImg = new Mat();
+            Mat blurImg = new Mat();
+            Mat outputImg = img;
+            Mat thresholdImg = new Mat();
+            Mat cannyEdges = new Mat();
+            Size size = new Size(5, 5);
 
         /*Imgproc.cvtColor(img, grayImg, Imgproc.COLOR_BGR2GRAY);
         Imgproc.GaussianBlur(grayImg, blurImg, size, 5, 5);
         Imgproc.threshold(blurImg, thresholdImg, 100, 255, Imgproc.THRESH_BINARY);
         Imgproc.Canny(thresholdImg, cannyEdges, 50, 200, 5, false);*/
 
-        Imgproc.cvtColor(img, grayImg, Imgproc.COLOR_BGR2GRAY);
-        Imgproc.blur(grayImg, blurImg,size);
-        Imgproc.threshold(blurImg, thresholdImg, 170, 255,Imgproc.THRESH_BINARY); //thresh!
-        Imgproc.Canny(thresholdImg, cannyEdges, 50, 200, 3, false);
+
+            Imgproc.cvtColor(img, grayImg, Imgproc.COLOR_BGR2GRAY);
+            //Imgproc.blur(grayImg, blurImg, size);
+            Imgproc.GaussianBlur(grayImg, blurImg, size, 7,7);
+            Imgproc.threshold(blurImg, thresholdImg, 120, 255, Imgproc.THRESH_BINARY); //thresh!
+            //Imgproc.adaptiveThreshold(blurImg,thresholdImg,255, Imgproc.ADAPTIVE_THRESH_MEAN_C, Imgproc.THRESH_OTSU,75,10);
+            Imgproc.Canny(thresholdImg, cannyEdges, 1, 255, 3, false);
 
         return cannyEdges;
 
-    }
-
-    public Mat pruefen2(Mat img){
-        Rect rect = new Rect(100,100,300,450);
-
-        //Mat croppedImg = new Mat(img, rect);
-        Mat grayImg = new Mat();
-        Mat blurImg = new Mat();
-        Mat thresholdImg = new Mat();
-        Mat ausgabe = new Mat();
-        Mat cannyEdges = new Mat();
-        Size size = new Size(3, 3);
-
-        Imgproc.cvtColor(img, grayImg, Imgproc.COLOR_BGR2GRAY);
-        Imgproc.blur(grayImg, blurImg, size);
-        //Imgproc.GaussianBlur(blurImg, thresholdImg, size, 7,7);
-        //Imgproc.bilateralFilter(grayImg, blurImg, 15,20,20);
-        //Imgproc.threshold(blurImg, thresholdImg, 200, 255,Imgproc.THRESH_OTSU);
-        Imgproc.threshold(blurImg, thresholdImg, 150, 220,Imgproc.THRESH_BINARY);
-        //Imgproc.adaptiveThreshold(blurImg,thresholdImg,255, Imgproc.ADAPTIVE_THRESH_GAUSSIAN_C, Imgproc.THRESH_BINARY,11,0);
-        Imgproc.Canny(thresholdImg, cannyEdges, 20, 60, 3, false);
-
-        return cannyEdges;
-    }
-
-    public Mat karteFreistellen(Mat img) {
-
-        Mat grayImg = new Mat();
-        Mat blurImg = new Mat();
-        Mat outputImg = img;
-        Mat thresholdImg = new Mat();
-        Mat cannyEdges = new Mat();
-        Mat lines = new Mat();
-        Size size = new Size(5, 5);
-        ArrayList<MatOfPoint> contours = new ArrayList<>();
-
-        Imgproc.cvtColor(img, grayImg, Imgproc.COLOR_BGR2GRAY);
-        Imgproc.GaussianBlur(grayImg, blurImg, size, 5, 5);
-        Imgproc.threshold(blurImg, thresholdImg, 100, 255, Imgproc.THRESH_BINARY);
-        Imgproc.Canny(thresholdImg, cannyEdges, 150, 200, 5, false);
-
-        //Imgproc.findContours(cannyEdges, contours, new Mat(), Imgproc.RETR_TREE, Imgproc.CHAIN_APPROX_SIMPLE);
-        //Imgproc.drawContours(outputImg, contours, -1, new Scalar(0, 0, 255));
-
-        /*for(int i = 0; contours.size() > i; i++){
-            contours.get(i);
-            do
-        }*/
-
-        /*double maxVal = 0;
-        int maxValIdx = 0;
-        for (int contourIdx = 0; contourIdx < contours.size(); contourIdx++) {
-            double contourArea = Imgproc.contourArea(contours.get(contourIdx));
-            if (maxVal < contourArea) {
-                maxVal = contourArea;
-                maxValIdx = contourIdx;
-            }
-        }*/
-
-        //Imgproc.drawContours(outputImg, contours, maxValIdx, new Scalar(0,255,0), 5);
-
-        return outputImg;
     }
 
     public Mat karteFreistellenHoughlines (Mat img){
@@ -437,130 +241,120 @@ public class Aufnahme extends JFrame {
         Mat grayImg = new Mat();
         Mat blurImg = new Mat();
         Mat thresholdImg = new Mat();
-        Mat ausgabe = new Mat();
+        Mat img2 = new Mat();
         Mat cannyEdges = new Mat();
         Mat hsvImg = new Mat();
         Mat rotiert = img;
         Mat cropped = img;
 
+        Rect rectA = new Rect(100,100,300,450);
+
+        img2 = new Mat(img, rectA);
+
         Size size = new Size(3,3);
 
-        Imgproc.cvtColor(img, grayImg, Imgproc.COLOR_BGR2GRAY);
-        Imgproc.blur(grayImg, blurImg, size);
-        //Imgproc.GaussianBlur(blurImg, thresholdImg, size, 7,7);
-        //Imgproc.bilateralFilter(grayImg, blurImg, 15,20,20);
-        Imgproc.threshold(blurImg, thresholdImg, 150, 220,Imgproc.THRESH_BINARY);
-        //Imgproc.adaptiveThreshold(blurImg,thresholdImg,255, Imgproc.ADAPTIVE_THRESH_GAUSSIAN_C, Imgproc.THRESH_BINARY,11,0);
-        Imgproc.Canny(thresholdImg, cannyEdges, 1, 255, 3, false);
+            Imgproc.cvtColor(img2, grayImg, Imgproc.COLOR_BGR2GRAY);
+            /*for(int i=0; i<grayImg.rows(); i++) {
+                for (int j = 0; j < grayImg.cols(); j++) {
+                    double[] pixel = grayImg.get(i, j);
+                    System.out.println(pixel[i]);
+                }
+            }*/
+
+            Imgproc.blur(grayImg, blurImg, size);
+
+            Imgproc.GaussianBlur(grayImg, blurImg, size, 7,7);
+            //Imgproc.bilateralFilter(grayImg, blurImg, 15,20,20);
+            Imgproc.threshold(blurImg, thresholdImg, 180, 255, Imgproc.THRESH_BINARY); //maxval vorher 255
+            //Imgproc.adaptiveThreshold(img,thresholdImg,255, Imgproc.ADAPTIVE_THRESH_MEAN_C, Imgproc.THRESH_OTSU,45,15);
+            Imgproc.Canny(thresholdImg, cannyEdges, 1, 255, 3, false);
 
 
-        ArrayList<MatOfPoint> contours= new ArrayList<>();
+            ArrayList<MatOfPoint> contours = new ArrayList<>();
 
-        Imgproc.findContours(cannyEdges,contours, new Mat(), Imgproc.RETR_TREE,Imgproc.CHAIN_APPROX_SIMPLE);
+            Imgproc.findContours(cannyEdges, contours, new Mat(), Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE);
 
-        if(contours.size()>1) {
+            if (contours.size() > 1) {
 
-            ArrayList<RotatedRect> rects = new ArrayList<>();
+                ArrayList<RotatedRect> rects = new ArrayList<>();
 
-            //Imgproc.drawContours(img, contours, -1, new Scalar(0, 0, 255));
+                //Imgproc.drawContours(img, contours, -1, new Scalar(0, 0, 255));
 
-            //funktioniert!!!!!!!!
+                //funktioniert!!!!!!!!
 
-            for(int i = 0; i<contours.size(); i++) {
-                MatOfPoint points = contours.get(i);
-                MatOfPoint2f contours2D = new MatOfPoint2f(points.toArray());
-                RotatedRect rotatedRect = Imgproc.minAreaRect(contours2D);
-                rects.add(rotatedRect);
-                //System.out.println("test1");
-            }
+                for (int i = 0; i < contours.size(); i++) {
+                    MatOfPoint points = contours.get(i);
+                    MatOfPoint2f contours2D = new MatOfPoint2f(points.toArray());
+                    RotatedRect rotatedRect = Imgproc.minAreaRect(contours2D);
+                    rects.add(rotatedRect);
+                    //System.out.println("test1");
+                }
 
-            RotatedRect rect = new RotatedRect();
+                RotatedRect rect = new RotatedRect();
 
-            for(int i = 0; i<rects.size(); i++ ){
-                RotatedRect rect1 = rects.get(i);
-                if(rect.size.width<rect1.size.width && rect.size.height<rect1.size.height){
-                    rect = rect1;
-                    //System.out.println("test2");
+                for (int i = 0; i < rects.size(); i++) {
+                    RotatedRect rect1 = rects.get(i);
+                    if (rect.size.width < rect1.size.width && rect.size.height < rect1.size.height) {
+                        rect = rect1;
+                        //System.out.println("test2");
+                    }
+                }
+
+                //double height1 = rect.size.width*1.5;
+
+                //Vielleicht noch andere Größenverhältnisse. Vieleicht ist das auch Unsinn!
+
+                double heightmin = rect.size.width * 1.3;
+                double heightmax = rect.size.width * 2.0;
+
+
+                if (rect.size.width > 40 && rect.size.width < 400 && rect.size.height > heightmin && rect.size.height < heightmax) {
+
+                    float angle = (float) rect.angle;
+
+                    Size rect_size = rect.size;
+
+                    if (rect.angle < -45.) {
+                        angle += 90.0;
+                        rect.size.height = rect_size.width;
+                        rect.size.width = rect_size.height;
+                    }
+
+                    //vielleicht irgendwie noch trimmen!
+
+                    Mat m = Imgproc.getRotationMatrix2D(rect.center, angle, 1.0);
+                    Imgproc.warpAffine(img2, rotiert, m, img2.size(), INTER_CUBIC);
+                    Imgproc.getRectSubPix(rotiert, rect.size, rect.center, cropped);
+                    //System.out.println(cropped.width() + " " + cropped.height());
                 }
             }
 
-            //double height1 = rect.size.width*1.5;
-
-            //Vielleicht noch andere Größenverhältnisse. Vieleicht ist das auch Unsinn!
-
-            double heightmin = rect.size.width*1.3;
-            double heightmax = rect.size.width*1.7;
-
-
-            if(rect.size.width>100 && rect.size.width<400 && rect.size.height>heightmin && rect.size.height<heightmax){
-
-                float angle = (float) rect.angle;
-
-                Size rect_size = rect.size;
-
-                if (rect.angle < -45.) {
-                    angle += 90.0;
-                    rect.size.height = rect_size.width;
-                    rect.size.width = rect_size.height;
-                }
-
-                //vielleicht irgendwie noch trimmen!
-
-                Mat m = Imgproc.getRotationMatrix2D(rect.center, angle, 1.0);
-                Imgproc.warpAffine(img, rotiert, m, img.size(), INTER_CUBIC);
-                Imgproc.getRectSubPix(rotiert, rect.size, rect.center, cropped);
-                //System.out.println(cropped.width() + " " + cropped.height());
-            }
-
-        }
-
-        return cropped;
+            return thresholdImg;
     }
 
-    public Mat backgroundsubtraction (Mat img){
-
-        Mat output = new Mat();
-        Mat grayMat = new Mat();
-        Mat accumulatedBackground = new Mat();
-        Mat backImage = new Mat();
-        Mat foreground = new Mat();
-
-
-        /*Imgproc.cvtColor(img, grayMat, COLOR_BGR2GRAY);
-
-        Core.absdiff(img,grayMat,output);
-
-        return output;*/
-
-        return output;
-    }
-
-    public Mat karteErkennenPruefen(Mat img) {
+    public Mat rahmenBegrenzen (Mat img){
 
         Mat grayImg = new Mat();
-        Mat blurImg = new Mat();
         Mat thresholdImg = new Mat();
-        Mat cannyEdges = new Mat();
-        Size size = new Size(2, 2);
 
-        Imgproc.cvtColor(img, grayImg, Imgproc.COLOR_BGR2GRAY);
-        Imgproc.blur(grayImg, blurImg, size);
-        Imgproc.threshold(blurImg, thresholdImg, 108, 255, Imgproc.THRESH_BINARY);//thresh!
-        Imgproc.Canny(thresholdImg, cannyEdges, 50, 200, 3, false);
+        Rect rect = new Rect(img.width()/2-150,img.height()/2-225,300,450);
 
-        ArrayList<MatOfPoint> contours= new ArrayList<>();
+        Mat ausgabe = img;
 
-        Imgproc.findContours(cannyEdges,contours, new Mat(), Imgproc.RETR_TREE,Imgproc.CHAIN_APPROX_SIMPLE);
+        Point p1 = new Point(img.width()/2-150,img.height()/2-225);
 
-        if(contours.size()>0) {
-            Imgproc.drawContours(img, contours, 1, new Scalar(0,0,255));
-        }
+        Point p2 = new Point(img.width()/2+150, img.height()/2+225);
 
-        return img;
+        //Imgproc.rectangle(ausgabe, p1,p2,new Scalar(0, 0, 255));
+
+        img = new Mat(img, rect);
+        //Imgproc.cvtColor(img, grayImg, Imgproc.COLOR_BGR2GRAY);
+        //Imgproc.threshold(grayImg, thresholdImg, 120, 255, Imgproc.THRESH_BINARY);
+
+        //Wenn der CascadeClassifier etwas findet Aufnahme beenden. (alle Classifier)
+        //Wenn die Aufnahme beendet wird 10 frames abspeichern über alle Klassifier laufen lassen, wenn 2-3 Listen gleich sind erfolgreiche Suche.
+        //wenn nicht Camera wieder starten.
+
+         return img;
     }
-
 }
-
-//k next neighbour
-//houghlines ausrichtung
-//pixelzählen

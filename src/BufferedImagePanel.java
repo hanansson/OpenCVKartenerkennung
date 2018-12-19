@@ -40,7 +40,7 @@ public class BufferedImagePanel extends JComponent {
     @Override
     public Dimension getPreferredSize() {
         //aufnahmebild größe ändern.
-        return new Dimension(700, 700);
+        return new Dimension(width, height);
     }
 
 
@@ -52,10 +52,5 @@ public class BufferedImagePanel extends JComponent {
         if(panelImage != null) {
             g.drawImage(panelImage, 0, 0, null);
         }
-
-        //if(panelImage.getHeight()==720) {
-            //g.setColor(Color.RED);
-            //g.drawRect(160, 120, 320, 450);
-        //}
     }
 }
