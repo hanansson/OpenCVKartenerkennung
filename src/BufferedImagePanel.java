@@ -2,8 +2,6 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 
-import static org.opencv.imgproc.Imgproc.COLOR_BGR2GRAY;
-
 public class BufferedImagePanel extends JComponent {
 
 
@@ -39,7 +37,6 @@ public class BufferedImagePanel extends JComponent {
 
     @Override
     public Dimension getPreferredSize() {
-        //aufnahmebild größe ändern.
         return new Dimension(width, height);
     }
 

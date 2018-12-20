@@ -5,4 +5,5 @@ public class Main {
         System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
         Aufnahme aufnahme = new Aufnahme();
     }
+
 }

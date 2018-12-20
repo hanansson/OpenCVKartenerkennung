@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/OpenCVKamera.iml" filepath="$PROJECT_DIR$/OpenCVKamera.iml" />
+      <module fileurl="file://$PROJECT_DIR$/KartenduellOpenCV.iml" filepath="$PROJECT_DIR$/KartenduellOpenCV.iml" />
     </modules>
   </component>
 </project>
