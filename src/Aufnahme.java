@@ -127,6 +127,7 @@ public class Aufnahme extends JFrame {
 
         /**
          * Hier wird mit dem Videocapturing begonnen.
+         * @made by Denis Risken
          */
         VideoCapture capture = new VideoCapture(0);
         frame = new Mat();
@@ -142,6 +143,7 @@ public class Aufnahme extends JFrame {
          * Werden auf 70 Frames Kartenfarben gefunden, wird die Aufnahme beendet.
          * Es kann davon ausgegangen werden, dass sich eine Karte im vorher bestimmten Bildbereich befindet
          * und der letzte Frame kann weiterverarbeitet werden, um die genaue Karte zu identifizieren.
+         * @made by Niels Hansen
          */
         while (capture.read(frame)) {
 
@@ -150,7 +152,7 @@ public class Aufnahme extends JFrame {
             imgPanel1.setImage(Mat2BufferedImage(rahmenBegrenzenVisualisiert(frame)));
             anzahlSymbole = farbenErkennen.formDetect(img, herzCascade, karoCascade, pikCascade, kreuzCascade, anzahlSymbole);
 
-            if (anzahlSymbole > 70) {
+            if (anzahlSymbole > 50) {
                 Mat aufnahmeImg = rahmenBegrenzen(frame);
                 kartenImages.add(aufnahmeImg);
                 break;
@@ -184,6 +186,9 @@ public class Aufnahme extends JFrame {
              * In der If-Verzweigung wird nach dem Zaehlen der weißen Pixel entschieden, welche Karte rot und welche Karte schwarz ist.
              * Auf die roten Karten wird ein Methode angewendet die nur nach Herz und Karo sucht-
              * Auf die schwarzen Karten wird ein Methode angewendet die nur nach Kreuz und Pik sucht.
+             *
+             * @made by Niels Hansen
+             * @made by Svenja Wiehen
              */
 
             if (n > 4500) {
@@ -256,6 +261,8 @@ public class Aufnahme extends JFrame {
      * Diese Funktion bestand zum Austesten. Von verschiedenen Filtern.
      * @param img
      * @return
+     *
+     * @made by Niels Hansen
      */
     public Mat pruefen(Mat img) {
 
@@ -282,6 +289,8 @@ public class Aufnahme extends JFrame {
      * Wenn Breite und Höhe in etwa dem Maßstab der Karte entsprachen, dann sollte das Rechteck den Bildbereich den die Karte umfasst begrenzen.
      * @param img
      * @return Bildausschnitt mit Karte
+     *
+     * @made by Niels Hansen
      */
     public Mat karteEingegrenztFreistellen(Mat img) {
 
@@ -348,6 +357,8 @@ public class Aufnahme extends JFrame {
      * Hier wird der Frame zurecht geschnitten.
      * @param img die Matrix die den aufgenommen Frame enthält
      * @return der ausgeschnittene Bildbereich
+     *
+     * @made by Niels Hansen
      */
     public Mat rahmenBegrenzen(Mat img) {
 
@@ -361,6 +372,8 @@ public class Aufnahme extends JFrame {
      * Hier wird ein Rechteck in rot für den Nutzer, als Orientierung eingezeichnet.
      * @param img die Matrix die den aufgenommen Frame enthält
      * @return der komplette Frame mit einem eingezeichnet roten Rechteck
+     *
+     * @made by Niels Hansen
      */
     public Mat rahmenBegrenzenVisualisiert(Mat img) {
         Mat ausgabeImg = img;
@@ -380,6 +393,8 @@ public class Aufnahme extends JFrame {
      * @param imgMate der bereits begrenzte Frame
      * @param thresh ein Thresholdwert der gut bei Tageslicht für das Herausfiltern der Kartenelemente geeignet ist.
      * @return Hier wird in einem IntegerArray die Anzahl an gefundenen Farbsymbolen und der funktionierende Thresholdwert für die Weiterverarbeitung zurückgegeben.
+     *
+     * @made by Niels Hansen
      */
     public int[] formenZaehlen(Mat imgMate, int thresh) {
 
@@ -406,8 +421,13 @@ public class Aufnahme extends JFrame {
                 if (rect.width > 40 && rect.width < 100) {
                     rects.add(rect);
                 }
+
             }
         }
+        /*if (rects.size() < 1) {
+            thresh = thresh + 70;
+            formenZaehlen(imgMate, thresh);
+        }*/
 
         anzahlUndThreshType[0] = rects.size();
         anzahlUndThreshType[1] = thresh;

@@ -2,6 +2,18 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 
+/**
+ * A BufferdImagePanel is a Swing component that can display a BufferdImage.
+ * It is constructed as a subclass of JComponent with the added functionality
+ * of setting a BufferdImage that will be displayed on the surface of this
+ * component.
+ *
+ * @author Michael K�lling and David J. Barnes.
+ * @version 1.0
+ *
+ * Modified by Karsten Lehn, 31.8.2016 from "ImgagePanel"
+ *
+ */
 public class BufferedImagePanel extends JComponent {
 
 
@@ -9,6 +21,10 @@ public class BufferedImagePanel extends JComponent {
     private BufferedImage panelImage;
 
 
+    /**
+     * Create a new, empty ImagePanel.
+     *
+     */
     public BufferedImagePanel()
     {
         width = 320;    // arbitrary size for empty panel
@@ -16,6 +32,11 @@ public class BufferedImagePanel extends JComponent {
         panelImage = null;
     }
 
+    /**
+     * Set the image that this panel should show.
+     *
+     * @param image  The image to be displayed.
+     */
     public void setImage(BufferedImage image)
     {
         if(image != null) {
@@ -26,6 +47,9 @@ public class BufferedImagePanel extends JComponent {
         }
     }
 
+    /**
+     * Clear the image on this panel.
+     */
     public void clearImage()
     {
         Graphics imageGraphics = panelImage.getGraphics();
@@ -35,12 +59,26 @@ public class BufferedImagePanel extends JComponent {
     }
 
 
+    /**
+     * Tell the layout manager how big we would like to be.
+     * (This method gets called by layout managers for placing
+     * the components.)
+     *
+     * @return The preferred dimension for this component.
+     */
     @Override
     public Dimension getPreferredSize() {
         return new Dimension(width, height);
     }
 
 
+    /**
+     * This component needs to be redisplayed. Copy the internal image
+     * to screen. (This method gets called by the Swing screen painter
+     * every time it want this component displayed.)
+     *
+     * @param g The graphics context that can be used to draw on this component.
+     */
     @Override
     public void paintComponent(Graphics g) {
 

@@ -23,6 +23,9 @@ public class FarbenErkennen {
      * @param erkannt
      * @return Wurde mindestens ein Symbol einer Farbe gefunden, dann wird durch die Erhöhung der Integervariable erkanntausgabe markiert,
      *         dass auf einem weiteren Frame Kartenfarben identifiziert wurden.
+     *
+     * @made by Svenja Wiehen
+     * @made by Niels Hansen
      */
     public int formDetect(Mat img, CascadeClassifier herzCascade, CascadeClassifier karoCascade, CascadeClassifier kreuzCascade, CascadeClassifier pikCascade, int erkannt) {
 
@@ -65,6 +68,8 @@ public class FarbenErkennen {
      * @param thresh
      * @return Die Variable vom Typ String bekommt entweder denn Wert Karo oder Herz zugewiesen.
      *         Die Kartenfarbe von der mehr Symbole gefunden werden, wird zurückgegeben.
+     *
+     * @made by Svenja Wiehen
      */
     public String detectRed(Mat img, CascadeClassifier herzCascade, CascadeClassifier karoCascade, int thresh){
 
@@ -111,6 +116,8 @@ public class FarbenErkennen {
      * @param thresh
      * @return Die Variable vom Typ String bekommt entweder denn Wert Kreuz oder Pik zugewiesen.
      *         Die Kartenfarbe von der mehr Symbole gefunden werden, wird zurückgegeben.
+     *
+     * @made by Svenja Wiehen
      */
     public String detectBlack(Mat img, CascadeClassifier kreuzCascade, CascadeClassifier pikCascade, int thresh){
 
