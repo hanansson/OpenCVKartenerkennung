@@ -28,10 +28,18 @@ public class Aufnahme extends JFrame {
     String symbol;
     ArrayList<Mat> kartenImages = new ArrayList<>();
 
+    /**
+     * Der Konstruktor der Klasse Aufnahme ruft die Methode createLayout auf, sobald die main-Methode eine Instanz der Klasse Aufnahme erzeugt.
+     */
     public Aufnahme() {
         creatLayout();
     }
 
+    /**
+     * In createLayout wird die GUI für das Program erzeugt.
+     * Es wird ein Bildaufnahmebereich erzeugt, das Layout des zusehenden Fensters bestimmt, ein Beenden-Button mit Funktion erzeugt
+     * und ein weiteres Fenster für die Ausgabe des Ergebnisses erstellt.
+     */
     public void creatLayout() {
 
         setTitle("Video stream");
@@ -61,9 +69,14 @@ public class Aufnahme extends JFrame {
             }
         });
 
-        String ausgabeWert = "";
-
+        String ausgabeWert;
         ausgabeWert = videoProcess();
+
+        /**
+         * Hier wird nach dem die Methode videoProcess die Kartenfarbe und den Kartenwert in Form eines Strings zurückgegeben hat, ein neues Fenster erzeugt
+         * Das Fenster beinhaltet die ermittelte Karte, in Textform.
+         */
+
         ausgabe.setText(ausgabeWert);
         JFrame ergebnis = new JFrame();
         ergebnis.setLayout(new BoxLayout(ergebnis.getContentPane(), BoxLayout.Y_AXIS));
@@ -75,6 +88,11 @@ public class Aufnahme extends JFrame {
         ergebnis.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
     }
+
+    /**
+     * In der Methode videoProcess werden die wesentlichen Funktionen des Programmes ausgeführt, um die aufgenommene Karte zu identifizieren.
+     * @return Die gefundene Karte wird als String Variable zurückgegeben.
+     */
 
     public String videoProcess() {
 
@@ -107,6 +125,9 @@ public class Aufnahme extends JFrame {
             System.exit(0);
         }
 
+        /**
+         * Hier wird mit dem Videocapturing begonnen.
+         */
         VideoCapture capture = new VideoCapture(0);
         frame = new Mat();
 
@@ -114,6 +135,14 @@ public class Aufnahme extends JFrame {
             throw new CvException("The Video File or the Camera could not be opened!");
         capture.read(frame);
 
+        /**
+         * In dieser while-Schleife wird jeder Frame auf einen bestimmten Bildbereich begrenzt.
+         * Einmal visuell für den Nutzer und einmal für die Weiterverarbeitung
+         * Im ausgewählte Bildbereich wird durch die Methode formDetect nach den 4 Kartenfarben gesucht.
+         * Werden auf 70 Frames Kartenfarben gefunden, wird die Aufnahme beendet.
+         * Es kann davon ausgegangen werden, dass sich eine Karte im vorher bestimmten Bildbereich befindet
+         * und der letzte Frame kann weiterverarbeitet werden, um die genaue Karte zu identifizieren.
+         */
         while (capture.read(frame)) {
 
             img = rahmenBegrenzen(frame);
@@ -135,7 +164,10 @@ public class Aufnahme extends JFrame {
         }
 
         capture.release();
-        System.out.println(kartenImages.size());
+
+        /**
+         * Der Frame der die Karte enthält wird nun im HSV-Farbraum danach untersucht, ob er die Farbe rot in einer bestimmten Menge enthält.
+         */
         for (i = 0; i < 1; i++) {
 
             Mat processedImage = new Mat();
@@ -148,6 +180,12 @@ public class Aufnahme extends JFrame {
             int n = Core.countNonZero(threshedImage);
             System.out.println("roter Anteil:" + n);
 
+            /**
+             * In der If-Verzweigung wird nach dem Zaehlen der weißen Pixel entschieden, welche Karte rot und welche Karte schwarz ist.
+             * Auf die roten Karten wird ein Methode angewendet die nur nach Herz und Karo sucht-
+             * Auf die schwarzen Karten wird ein Methode angewendet die nur nach Kreuz und Pik sucht.
+             */
+
             if (n > 4500) {
                 System.out.println("rot");
 
@@ -159,6 +197,10 @@ public class Aufnahme extends JFrame {
                 symbol = farbenErkennen.detectRed(kartenImages.get(i), herzCascade, karoCascade, thresh);
             } else {
                 System.out.println("schwarz");
+                /**
+                 * Der auskommentierte Code guckt sich einen weiteren Bereiech im HSV-Farbraum an, um bei schlechten Lichtverhältnissen rot zu identifizieren.
+                 * Diese Funktion ist noch nicht präzise genug.
+                 */
                 /*Core.inRange(processedImage, new Scalar(130, 0, 0), new Scalar(150, 255, 255), threshedImage);
                 Imgproc.medianBlur(threshedImage, threshedImage, 5);
                 n = Core.countNonZero(threshedImage);
@@ -173,14 +215,19 @@ public class Aufnahme extends JFrame {
                     symbol = farbenErkennen.detectRed(kartenImages.get(i), herzCascade, karoCascade, thresh);
                 }*/
 
-                    int[] anzahlUndThreshType = formenZaehlen(kartenImages.get(i), 120);
-                    anzahlSymboleEinerFarbe = anzahlUndThreshType [0];
-                    int thresh = anzahlUndThreshType [1];
 
-                    symbol = farbenErkennen.detectBlack(kartenImages.get(i), pikCascade, kreuzCascade, thresh);
+                int[] anzahlUndThreshType = formenZaehlen(kartenImages.get(i), 120);
+                anzahlSymboleEinerFarbe = anzahlUndThreshType [0];
+                int thresh = anzahlUndThreshType [1];
+
+                symbol = farbenErkennen.detectBlack(kartenImages.get(i), pikCascade, kreuzCascade, thresh);
             }
 
         }
+
+        /**
+         * Hier wird das gefunden Ergebnis zurückgegeben.
+         */
         System.out.println("Die Karte ist " + symbol + " " + anzahlSymboleEinerFarbe);
         String ausgabeWerte = symbol + " " + anzahlSymboleEinerFarbe;
         return ausgabeWerte;
@@ -205,6 +252,11 @@ public class Aufnahme extends JFrame {
 
     }
 
+    /**
+     * Diese Funktion bestand zum Austesten. Von verschiedenen Filtern.
+     * @param img
+     * @return
+     */
     public Mat pruefen(Mat img) {
 
         Mat grayImg = new Mat();
@@ -223,6 +275,14 @@ public class Aufnahme extends JFrame {
 
     }
 
+    /**
+     * Die Methode sollte im aufgenommenen Frame an beliebiger Position die Karte ausfinding machen.
+     * Hierzu wurden im aufgenommenen Frame Konturen gesucht.
+     * Um die größte gefundene Kontur wurde ein Rechteck gezeichnet.
+     * Wenn Breite und Höhe in etwa dem Maßstab der Karte entsprachen, dann sollte das Rechteck den Bildbereich den die Karte umfasst begrenzen.
+     * @param img
+     * @return Bildausschnitt mit Karte
+     */
     public Mat karteEingegrenztFreistellen(Mat img) {
 
         Mat grayImg = new Mat();
@@ -276,28 +336,19 @@ public class Aufnahme extends JFrame {
             double heightmin = rect.size.width * 1.3;
             double heightmax = rect.size.width * 2.0;
 
-
             if (rect.size.width > 40 && rect.size.width < 400 && rect.size.height > heightmin && rect.size.height < heightmax) {
-
-                float angle = (float) rect.angle;
-
-                Size rect_size = rect.size;
-
-                if (rect.angle < -45.) {
-                    angle += 90.0;
-                    rect.size.height = rect_size.width;
-                    rect.size.width = rect_size.height;
-                }
-
-                Mat m = Imgproc.getRotationMatrix2D(rect.center, angle, 1.0);
-                Imgproc.warpAffine(img2, rotiert, m, img2.size(), INTER_CUBIC);
-                Imgproc.getRectSubPix(rotiert, rect.size, rect.center, cropped);
+                //Karte drehen und zuschneiden.
             }
         }
 
         return thresholdImg;
     }
 
+    /**
+     * Hier wird der Frame zurecht geschnitten.
+     * @param img die Matrix die den aufgenommen Frame enthält
+     * @return der ausgeschnittene Bildbereich
+     */
     public Mat rahmenBegrenzen(Mat img) {
 
         Rect rect = new Rect(img.width() / 2 - 150, img.height() / 2 - 225, 300, 450);
@@ -306,6 +357,11 @@ public class Aufnahme extends JFrame {
         return img;
     }
 
+    /**
+     * Hier wird ein Rechteck in rot für den Nutzer, als Orientierung eingezeichnet.
+     * @param img die Matrix die den aufgenommen Frame enthält
+     * @return der komplette Frame mit einem eingezeichnet roten Rechteck
+     */
     public Mat rahmenBegrenzenVisualisiert(Mat img) {
         Mat ausgabeImg = img;
 
@@ -317,6 +373,14 @@ public class Aufnahme extends JFrame {
         return ausgabeImg;
     }
 
+    /**
+     * Auf der Karte werden nach Anwenden mehrerer Filter Konturen erkannt und abgespeichert.
+     * Um die Konturen werden Rechtecke gezeichnet.
+     * Rechtecke mit einer bestimmten Größe werden gesammelt und sollen die Anzahl an Farbsymbolen ausmachen.
+     * @param imgMate der bereits begrenzte Frame
+     * @param thresh ein Thresholdwert der gut bei Tageslicht für das Herausfiltern der Kartenelemente geeignet ist.
+     * @return Hier wird in einem IntegerArray die Anzahl an gefundenen Farbsymbolen und der funktionierende Thresholdwert für die Weiterverarbeitung zurückgegeben.
+     */
     public int[] formenZaehlen(Mat imgMate, int thresh) {
 
         int threshType = 0;
@@ -333,7 +397,6 @@ public class Aufnahme extends JFrame {
         Imgproc.threshold(blurImg, thresholdImg, thresh, 255, Imgproc.THRESH_BINARY);
 
         Imgproc.findContours(thresholdImg, contours, new Mat(), Imgproc.RETR_TREE, Imgproc.CHAIN_APPROX_SIMPLE);
-        //Imgproc.drawContours(imgMate, contours, -1, new Scalar(0, 0, 255));
 
         if (contours.size() > 0) {
             for (int i = 0; i < contours.size(); i++) {
@@ -344,10 +407,6 @@ public class Aufnahme extends JFrame {
                     rects.add(rect);
                 }
             }
-        }
-        if (rects.size() < 1) {
-            thresh = thresh + 70;
-            formenZaehlen(imgMate, thresh);
         }
 
         anzahlUndThreshType[0] = rects.size();

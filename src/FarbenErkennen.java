@@ -4,7 +4,26 @@ import org.opencv.objdetect.CascadeClassifier;
 
 import java.util.List;
 
+/**
+ * Diese Klasse enthält Methoden, die spezielle Kartenfarben erkennen soll.
+ */
+
 public class FarbenErkennen {
+
+    /**
+     * Diese Methode sucht den ausgewählten Bildbereich beziehungsweise die mitgegebene Matrix nach allen vier Kartenfarben ab.
+     * Dazu wird die Matrix in Grauwerte umgewandelt und es findet eine Histogrammequalization statt.
+     * Mit den selbsttrainierten Classifieren wird der Bildbereich den die Matrix beinhaltet nach Kartenfarben durchsucht.
+     * Die gefundenen Kartenfarben(einzelne Symbole) werden separat in Listen gespeichert.
+     * @param img
+     * @param herzCascade
+     * @param karoCascade
+     * @param kreuzCascade
+     * @param pikCascade
+     * @param erkannt
+     * @return Wurde mindestens ein Symbol einer Farbe gefunden, dann wird durch die Erhöhung der Integervariable erkanntausgabe markiert,
+     *         dass auf einem weiteren Frame Kartenfarben identifiziert wurden.
+     */
     public int formDetect(Mat img, CascadeClassifier herzCascade, CascadeClassifier karoCascade, CascadeClassifier kreuzCascade, CascadeClassifier pikCascade, int erkannt) {
 
         Mat frameGray = new Mat();
@@ -36,6 +55,17 @@ public class FarbenErkennen {
         return erkanntausgabe;
     }
 
+    /**
+     * Es wurde bereits bestimmt, dass die Karte rot ist, wenn diese Methode ausgeführt wird.
+     * Daher wird in dieser Methode getestet, ob es sich bei der Karte um Herz oder Karo handelt.
+     * Hierzu wird der Herz und Karo Classifier angewendet.
+     * @param img
+     * @param herzCascade
+     * @param karoCascade
+     * @param thresh
+     * @return Die Variable vom Typ String bekommt entweder denn Wert Karo oder Herz zugewiesen.
+     *         Die Kartenfarbe von der mehr Symbole gefunden werden, wird zurückgegeben.
+     */
     public String detectRed(Mat img, CascadeClassifier herzCascade, CascadeClassifier karoCascade, int thresh){
 
         Mat grayImg = new Mat();
@@ -71,6 +101,17 @@ public class FarbenErkennen {
         return symbol;
     }
 
+    /**
+     * Es wurde bereits bestimmt, dass die Karte schwarz ist, wenn diese Methode ausgeführt wird.
+     * Daher wird in dieser Methode getestet, ob es sich bei der Karte um Kreuz oder Pik handelt.
+     * Hierzu wird der Kreuz und Pik Classifier angewendet.
+     * @param img
+     * @param kreuzCascade
+     * @param pikCascade
+     * @param thresh
+     * @return Die Variable vom Typ String bekommt entweder denn Wert Kreuz oder Pik zugewiesen.
+     *         Die Kartenfarbe von der mehr Symbole gefunden werden, wird zurückgegeben.
+     */
     public String detectBlack(Mat img, CascadeClassifier kreuzCascade, CascadeClassifier pikCascade, int thresh){
 
         Mat grayImg = new Mat();
